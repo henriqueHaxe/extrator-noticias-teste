@@ -1,7 +1,30 @@
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const { JSDOM } = require('jsdom');
 const { Readability } = require('@mozilla/readability');
+
+// Automatic local .env loader fallback for local development
+if (!process.env.GEMINI_API_KEY && fs.existsSync('.env')) {
+  try {
+    const envContent = fs.readFileSync('.env', 'utf-8');
+    const lines = envContent.split(/\r?\n/);
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed && !trimmed.startsWith('#') && trimmed.includes('=')) {
+        const parts = trimmed.split('=');
+        const key = parts[0].trim();
+        const value = parts.slice(1).join('=').trim();
+        if (key) {
+          process.env[key] = value;
+        }
+      }
+    }
+    console.log('Arquivo .env carregado localmente com sucesso.');
+  } catch (e) {
+    console.error('Erro ao ler o arquivo .env:', e);
+  }
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
