@@ -6,8 +6,8 @@ const { Readability } = require('@mozilla/readability');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Hardcoded Gemini API Key provided by the user
-const GEMINI_API_KEY = 'AIzaSyD5RWDj9t5bRGEO52RbRJi3o0iYzv-mw9c';
+// Read Gemini API Key from environment variables (important for security on public repos)
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -80,6 +80,10 @@ app.post('/api/extract', async (req, res) => {
   
   if (!url) {
     return res.status(400).json({ error: 'URL é obrigatória' });
+  }
+
+  if (!GEMINI_API_KEY) {
+    return res.status(500).json({ error: 'Chave API não configurada. Por favor, defina a variável de ambiente GEMINI_API_KEY no servidor.' });
   }
 
   const startTime = Date.now();
