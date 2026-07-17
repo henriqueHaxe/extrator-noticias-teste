@@ -1,0 +1,14 @@
+{
+  "name": "news-extractor-workspace",
+  "version": "1.0.0",
+  "description": "Simple news extraction workspace using Gemini API",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@mozilla/readability": "^0.6.0",
+    "express": "^4.19.2",
+    "jsdom": "^29.1.1"
+  }
+}

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Extrator de Notícias Inteligente</title>
+  <!-- Google Fonts (Inter) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Marked.js for markdown rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <!-- App Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Left Column: Input and configuration -->
+    <aside class="sidebar">
+      <header class="app-header">
+        <h1>Extrator de Notícias</h1>
+        <p>Insira o link para extrair todo o conteúdo da notícia limpo por IA.</p>
+      </header>
+
+      <div class="card search-card">
+        <form id="extract-form">
+          <div class="form-group">
+            <label for="news-url">URL da Notícia</label>
+            <input 
+              type="url" 
+              id="news-url" 
+              placeholder="https://exemplo.com/noticia" 
+              required
+            >
+          </div>
+          <button type="submit" id="submit-btn">
+            <span>Extrair Conteúdo</span>
+            <div class="spinner" id="btn-spinner" style="display: none;"></div>
+          </button>
+        </form>
+      </div>
+
+      <!-- Error State -->
+      <div class="error-banner" id="error-banner" style="display: none;">
+        <span class="error-icon">⚠️</span>
+        <span id="error-message">Ocorreu um erro ao processar.</span>
+      </div>
+
+      <!-- Collapsible History Card -->
+      <div class="card history-card" id="history-card">
+        <div class="history-card-header">
+          <button class="history-toggle" id="history-toggle" type="button">
+            <span>Histórico e Métricas</span>
+            <span class="toggle-icon">▼</span>
+          </button>
+          <button id="compare-btn" class="secondary-btn compare-action-btn" type="button" disabled>Comparar</button>
+        </div>
+        <div class="history-content" id="history-content" style="display: none;">
+          <div class="divider" style="margin: 10px 0;"></div>
+          <div id="history-list" class="history-list">
+            <p class="no-history">Nenhuma extração realizada ainda.</p>
+          </div>
+          <button id="clear-history-btn" class="secondary-btn clear-btn" style="display: none; margin-top: 10px; width: 100%;">Limpar Histórico</button>
+        </div>
+      </div>
+
+      <!-- Real-Time Metrics Card (Left Column, below history) -->
+      <div class="card metrics-card" id="metrics-card" style="display: none;">
+        <h3 class="metrics-title">Métricas da Extração</h3>
+        <div class="divider" style="margin: 10px 0 15px 0;"></div>
+        <div class="metrics-grid-vertical">
+          <div class="metric-row">
+            <span class="metric-label">Tempo Total:</span>
+            <span class="metric-value" id="metric-time">-</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Tokens Entrada:</span>
+            <span class="metric-value" id="metric-input">-</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Tokens Saída:</span>
+            <span class="metric-value" id="metric-output">-</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-label">Total Tokens:</span>
+            <span class="metric-value" id="metric-total">-</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Right Column: Result displaying -->
+    <main class="main-content">
+      <div class="card result-card" id="result-card">
+        <div class="result-header">
+          <h2>Conteúdo Extraído</h2>
+          <button id="copy-btn" class="secondary-btn" disabled>Copiar Texto</button>
+        </div>
+        <div class="divider"></div>
+        <div id="output-content" class="markdown-body">
+          <p class="placeholder-text">Cole o link da notícia na barra lateral e clique em "Extrair Conteúdo" para ver o texto limpo aqui.</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Comparison Modal -->
+  <div class="modal" id="compare-modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Comparar Extrações</h2>
+        <span class="close-modal" id="close-modal-btn">&times;</span>
+      </div>
+      <div class="divider"></div>
+      <div class="modal-body">
+        <p class="modal-instruction">Selecione duas extrações do histórico abaixo para comparar o tempo de execução e o uso de tokens:</p>
+        
+        <!-- Selection list -->
+        <div class="compare-selection-list" id="compare-selection-list">
+          <!-- Dynamically populated checkbox list -->
+        </div>
+        
+        <!-- Chart comparison section -->
+        <div class="compare-chart-container" id="compare-chart-container" style="display: none;">
+          <h3>Resultado do Comparativo</h3>
+          <div class="comparison-charts">
+            <!-- Time Chart -->
+            <div class="chart-group">
+              <h4>Tempo de Execução (segundos)</h4>
+              <div class="chart-bar-container">
+                <div class="chart-bar-row">
+                  <span class="bar-label" id="bar-label-time-1">Item 1</span>
+                  <div class="bar-wrapper">
+                    <div class="bar-fill time-bar" id="bar-fill-time-1" style="width: 0%;"></div>
+                  </div>
+                  <span class="bar-value" id="bar-val-time-1">0s</span>
+                </div>
+                <div class="chart-bar-row">
+                  <span class="bar-label" id="bar-label-time-2">Item 2</span>
+                  <div class="bar-wrapper">
+                    <div class="bar-fill time-bar" id="bar-fill-time-2" style="width: 0%;"></div>
+                  </div>
+                  <span class="bar-value" id="bar-val-time-2">0s</span>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Tokens Chart -->
+            <div class="chart-group" style="margin-top: 24px;">
+              <h4>Uso Total de Tokens</h4>
+              <div class="chart-bar-container">
+                <div class="chart-bar-row">
+                  <span class="bar-label" id="bar-label-tokens-1">Item 1</span>
+                  <div class="bar-wrapper">
+                    <div class="bar-fill tokens-bar" id="bar-fill-tokens-1" style="width: 0%;"></div>
+                  </div>
+                  <span class="bar-value" id="bar-val-tokens-1">0 tks</span>
+                </div>
+                <div class="chart-bar-row">
+                  <span class="bar-label" id="bar-label-tokens-2">Item 2</span>
+                  <div class="bar-wrapper">
+                    <div class="bar-fill tokens-bar" id="bar-fill-tokens-2" style="width: 0%;"></div>
+                  </div>
+                  <span class="bar-value" id="bar-val-tokens-2">0 tks</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
